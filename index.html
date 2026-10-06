@@ -1,807 +1,525 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>복지카드 실적</title>
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Chart.js DataLabels Plugin CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg-slate: #f8fafc;
-      --border-color: #e2e8f0;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --up-color: #dc2626;
-      --down-color: #2563eb;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>복지카드 실적</title>
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Chart.js DataLabels Plugin CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root {
+--primary: #2563eb;
+--primary-hover: #1d4ed8;
+--bg-slate: #f8fafc;
+--border-color: #e2e8f0;
+--text-main: #0f172a;
+--text-muted: #64748b;
+/* 증가 시 파란색, 감소 시 빨간색으로 변경 */
+--up-color: #2563eb;
+--down-color: #dc2626;
+}
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    }
-
-    body {
-      background-color: var(--bg-slate);
-      color: var(--text-main);
-      padding: 24px;
-      line-height: 1.5;
-    }
-
-    .container {
-      max-width: 1550px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .card {
-      background: #ffffff;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-      padding: 20px 24px;
-    }
-
-    .header-card {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .title-area h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-main);
-    }
-
-    .title-area p {
-      font-size: 0.875rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .btn-action {
-      padding: 6px 12px;
-      font-size: 0.8rem;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      background: #ffffff;
-      color: var(--text-main);
-      cursor: pointer;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.2s ease;
-    }
-
-    .btn-action:hover {
-      background-color: #f1f5f9;
-    }
-
-    .filter-btn {
-      padding: 6px 12px;
-      font-size: 0.8rem;
-      border-radius: 20px;
-      border: 1px solid var(--border-color);
-      background: #f1f5f9;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-
-    .filter-btn.active {
-      background-color: var(--primary);
-      color: #ffffff;
-      border-color: var(--primary);
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .chart-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--text-main);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* 단위 텍스트 스타일 (상단 소제목과 동일한 크기 및 색상 적용) */
-    .unit-text {
-      font-size: 0.875rem;
-      font-weight: 400;
-      color: var(--text-muted);
-      margin-left: 2px;
-    }
-
-    .chart-container {
-      position: relative;
-      height: 360px;
-      width: 100%;
-    }
-
-    .table-container {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.83rem;
-      text-align: right;
-    }
-
-    th, td {
-      padding: 8px 6px;
-      border: 1px solid var(--border-color);
-      white-space: nowrap;
-    }
-
-    th {
-      background-color: #f1f5f9;
-      color: #334155;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    th.col-item {
-      text-align: left;
-      min-width: 180px;
-    }
-
-    tr.row-rate {
-      background-color: #f8fafc;
-      font-weight: 700;
-    }
-
-    tr.row-summary {
-      background-color: #eff6ff;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.15s;
-    }
-
-    tr.row-summary:hover {
-      background-color: #dbeafe;
-    }
-
-    tr.row-summary-25 {
-      background-color: #f1f5f9;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.15s;
-    }
-
-    tr.row-summary-25:hover {
-      background-color: #e2e8f0;
-    }
-
-    tr.row-detail {
-      background-color: #ffffff;
-    }
-
-    tr.row-detail.hidden {
-      display: none;
-    }
-
-    .td-item {
-      text-align: left;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .indent-1 {
-      padding-left: 18px !important;
-      font-weight: 600;
-      color: #334155;
-    }
-
-    .toggle-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      color: #64748b;
-      transition: transform 0.2s ease;
-    }
-
-    .toggle-icon.expanded {
-      transform: rotate(90deg);
-    }
-
-    input.data-input {
-      width: 100%;
-      min-width: 90px;
-      text-align: right;
-      padding: 5px 6px;
-      border: 1px solid #cbd5e1;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      background-color: #ffffff;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    input.data-input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-    }
-
-    .text-up {
-      color: var(--up-color);
-    }
-
-    .text-down {
-      color: var(--down-color);
-    }
-
-    .notice-bar {
-      background-color: #dcfce7;
-      border: 1px solid #86efac;
-      color: #166534;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      display: none;
-      align-items: center;
-      gap: 8px;
-    }
-  </style>
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+body {
+background-color: var(--bg-slate);
+color: var(--text-main);
+padding: 24px;
+line-height: 1.5;
+}
+.container {
+max-width: 1550px;
+margin: 0 auto;
+display: flex;
+flex-direction: column;
+gap: 20px;
+}
+.card {
+background: #ffffff;
+border-radius: 12px;
+border: 1px solid var(--border-color);
+box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+padding: 20px 24px;
+}
+.header-card {
+display: flex;
+justify-content: space-between;
+align-items: center;
+flex-wrap: wrap;
+gap: 12px;
+}
+.title-area h1 {
+font-size: 1.4rem;
+font-weight: 700;
+display: flex;
+align-items: center;
+gap: 8px;
+color: var(--text-main);
+}
+.title-area p {
+font-size: 0.875rem;
+color: var(--text-muted);
+margin-top: 4px;
+}
+.btn-group {
+display: flex;
+gap: 8px;
+align-items: center;
+flex-wrap: wrap;
+}
+.btn-action {
+padding: 6px 12px;
+font-size: 0.8rem;
+border-radius: 6px;
+border: 1px solid var(--border-color);
+background: #ffffff;
+color: var(--text-main);
+cursor: pointer;
+font-weight: 600;
+display: inline-flex;
+align-items: center;
+gap: 4px;
+transition: all 0.2s ease;
+}
+.btn-action:hover {
+background-color: #f1f5f9;
+}
+.filter-btn {
+padding: 6px 12px;
+font-size: 0.8rem;
+border-radius: 20px;
+border: 1px solid var(--border-color);
+background: #f1f5f9;
+color: var(--text-muted);
+cursor: pointer;
+font-weight: 600;
+transition: all 0.2s ease;
+}
+.filter-btn.active {
+background-color: var(--primary);
+color: #ffffff;
+border-color: var(--primary);
+}
+.chart-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 16px;
+}
+.chart-title {
+font-size: 1.05rem;
+font-weight: 700;
+color: var(--text-main);
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.chart-container {
+position: relative;
+height: 360px;
+width: 100%;
+}
+.table-container {
+overflow-x: auto;
+}
+table {
+width: 100%;
+border-collapse: collapse;
+font-size: 0.83rem;
+text-align: right;
+}
+th, td {
+padding: 8px 6px;
+border: 1px solid var(--border-color);
+white-space: nowrap;
+}
+th {
+background-color: #f1f5f9;
+color: #334155;
+font-weight: 600;
+text-align: center;
+}
+th.col-item {
+text-align: left;
+min-width: 180px;
+}
+tr.row-rate {
+background-color: #f8fafc;
+font-weight: 700;
+}
+tr.row-summary {
+background-color: #eff6ff;
+font-weight: 700;
+cursor: pointer;
+user-select: none;
+transition: background-color 0.15s;
+}
+tr.row-summary:hover {
+background-color: #dbeafe;
+}
+tr.row-summary-25 {
+background-color: #f1f5f9;
+font-weight: 700;
+cursor: pointer;
+user-select: none;
+transition: background-color 0.15s;
+}
+tr.row-summary-25:hover {
+background-color: #e2e8f0;
+}
+tr.row-detail {
+background-color: #ffffff;
+}
+tr.row-detail.hidden {
+display: none;
+}
+.td-item {
+text-align: left;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+.indent-1 {
+padding-left: 18px !important;
+font-weight: 600;
+color: #334155;
+}
+.toggle-icon {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+width: 16px;
+height: 16px;
+color: #64748b;
+transition: transform 0.2s ease;
+}
+.toggle-icon.expanded {
+transform: rotate(90deg);
+}
+input.data-input {
+width: 100%;
+min-width: 90px;
+text-align: right;
+padding: 5px 6px;
+border: 1px solid #cbd5e1;
+border-radius: 4px;
+font-size: 0.8rem;
+background-color: #ffffff;
+transition: border-color 0.2s, box-shadow 0.2s;
+}
+input.data-input:focus {
+outline: none;
+border-color: var(--primary);
+box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.text-up {
+color: var(--up-color);
+}
+.text-down {
+color: var(--down-color);
+}
+.notice-bar {
+background-color: #dcfce7;
+border: 1px solid #86efac;
+color: #166534;
+padding: 10px 16px;
+border-radius: 8px;
+font-size: 0.85rem;
+display: none;
+align-items: center;
+gap: 8px;
+}
+</style>
 </head>
 <body>
-
 <div class="container">
-  <!-- Restoration Notice Bar -->
-  <div id="noticeBar" class="notice-bar">
-    <i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
-    <span id="noticeText">이전 저장소 데이터가 자동으로 발견되어 성공적으로 복구되었습니다!</span>
-  </div>
-
-  <!-- Header Card -->
-  <div class="card header-card">
-    <div class="title-area">
-      <h1>
-        <i data-lucide="credit-card" style="color: var(--primary);"></i>
-        복지카드 실적
-      </h1>
-      <p>3개사(웰페어클럽, 현대이지웰, 하이비타민) 실적 추이</p>
-    </div>
-    <div class="btn-group">
-      <button class="btn-action" onclick="exportDataBackup()">
-        <i data-lucide="download" style="width: 14px; height: 14px;"></i> 백업 저장
-      </button>
-      <button class="btn-action" onclick="document.getElementById('fileInput').click()">
-        <i data-lucide="upload" style="width: 14px; height: 14px;"></i> 백업 불러오기
-      </button>
-      <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importDataBackup(event)">
-    </div>
-  </div>
-
-  <!-- Chart Card -->
-  <div class="card">
-    <div class="chart-header">
-      <div class="chart-title">
-        <i data-lucide="line-chart" style="color: var(--primary);"></i>
-        <span>순주문금액</span>
-        <span class="unit-text">(단위: 백만 원)</span>
-      </div>
-      <div class="btn-group" id="filterBtnGroup">
-        <button class="filter-btn active" data-filter="all">전체</button>
-        <button class="filter-btn" data-filter="welfare">웰페어클럽</button>
-        <button class="filter-btn" data-filter="hyundai">현대이지웰</button>
-        <button class="filter-btn" data-filter="hivitamin">하이비타민</button>
-      </div>
-    </div>
-    <div class="chart-container">
-      <canvas id="performanceChart"></canvas>
-    </div>
-  </div>
-
-  <!-- Table Card -->
-  <div class="card">
-    <div class="table-container">
-      <table id="dataTable">
-        <thead>
-          <tr>
-            <th class="col-item">구분</th>
-            <th>1월</th><th>2월</th><th>3월</th><th>4월</th>
-            <th>5월</th><th>6월</th><th>7월</th><th>8월</th>
-            <th>9월</th><th>10월</th><th>11월</th><th>12월</th>
-            <th>누계</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <!-- JS 동적 생성 -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+<!-- Restoration Notice Bar -->
+<div id="noticeBar" class="notice-bar">
+<i data-lucide="check-circle" style="width: 18px; height: 18px;"></i>
+<span id="noticeText">이전 저장소 데이터가 자동으로 발견되어 성공적으로 복구되었습니다!</span>
 </div>
-
+<!-- Header Card -->
+<div class="card header-card">
+<div class="title-area">
+<h1>
+<i data-lucide="credit-card" style="color: var(--primary);"></i>
+복지카드 실적
+</h1>
+<p>3개사(웰페어클럽, 현대이지웰, 하이비타민) 실적 추이</p>
+</div>
+<div class="btn-group">
+<button class="btn-action" onclick="exportDataBackup()">
+<i data-lucide="download" style="width: 14px; height: 14px;"></i> 백업 저장
+</button>
+<button class="btn-action" onclick="document.getElementById('fileInput').click()">
+<i data-lucide="upload" style="width: 14px; height: 14px;"></i> 백업 불러오기
+</button>
+<input type="file" id="fileInput" accept=".json" style="display: none;" onchange="importDataBackup(event)">
+</div>
+</div>
+<!-- Chart Card -->
+<div class="card">
+<div class="chart-header">
+<div class="chart-title">
+<i data-lucide="line-chart" style="color: var(--primary);"></i>
+<span>순주문금액(단위: 백만 원)</span>
+</div>
+<div class="btn-group" id="filterBtnGroup">
+<button class="filter-btn active" data-filter="all">전체</button>
+<button class="filter-btn" data-filter="welfare">웰페어클럽</button>
+<button class="filter-btn" data-filter="hyundai">현대이지웰</button>
+<button class="filter-btn" data-filter="hivitamin">하이비타민</button>
+</div>
+</div>
+<div class="chart-container">
+<canvas id="performanceChart"></canvas>
+</div>
+</div>
+<!-- Table Card -->
+<div class="card">
+<div class="table-container">
+<table id="dataTable">
+<thead>
+<tr>
+<th class="col-item">구분</th>
+<th>1월</th><th>2월</th><th>3월</th><th>4월</th>
+<th>5월</th><th>6월</th><th>7월</th><th>8월</th>
+<th>9월</th><th>10월</th><th>11월</th><th>12월</th>
+<th>누계</th>
+</tr>
+</thead>
+<tbody id="tableBody">
+<!-- JS 동적 생성 -->
+</tbody>
+</table>
+</div>
+</div>
+</div>
 <script>
-  Chart.register(ChartDataLabels);
-
-  const STORAGE_KEY = 'welfare_dashboard_net_v1';
-  const LEGACY_STORAGE_KEYS = [
-    'welfare_dashboard_combined_v1',
-    'welfare_dashboard_v1',
-    'welfare_card_data',
-    'welfare_dashboard_data'
-  ];
-
-  let currentFilter = 'all'; 
-  let chart = null;
-
-  let db = {
-    net: createEmptyYearData()
-  };
-
-  function createEmptyYearData() {
-    return {
-      '25': { welfare: {}, hyundai: {}, hivitamin: {} },
-      '26': { welfare: {}, hyundai: {}, hivitamin: {} }
-    };
-  }
-
-  function formatMillion(val) {
-    if (!val || val === 0) return '0';
-    return Math.round(val / 1000000).toLocaleString();
-  }
-
-  function formatNumberWithCommas(numStr) {
-    if (numStr === null || numStr === undefined || numStr === '') return '';
-    const cleanNum = numStr.toString().replace(/[^0-9]/g, '');
-    if (!cleanNum) return '';
-    return parseInt(cleanNum, 10).toLocaleString();
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    loadSavedDataWithAutoRecovery();
-    initChart();
-    renderTableStructure();
-    setupFilterListeners();
-    calculateAndRender();
-  });
-
-  function loadSavedDataWithAutoRecovery() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    let loaded = false;
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.net && hasData(parsed.net)) {
-          db.net = parsed.net;
-          loaded = true;
-        }
-      } catch (e) {
-        console.error('Current storage parse error:', e);
-      }
-    }
-
-    if (!loaded) {
-      for (const oldKey of LEGACY_STORAGE_KEYS) {
-        const oldSaved = localStorage.getItem(oldKey);
-        if (oldSaved) {
-          try {
-            const parsed = JSON.parse(oldSaved);
-            const targetNet = parsed.net || parsed;
-            if (hasData(targetNet)) {
-              db.net = normalizeNetData(targetNet);
-              saveData();
-              showNoticeBar("이전 저장 데이터가 발견되어 자동으로 복구되었습니다!");
-              loaded = true;
-              break;
-            }
-          } catch (e) {
-            console.error('Legacy storage parse error:', e);
-          }
-        }
-      }
-    }
-  }
-
-  function hasData(netObj) {
-    if (!netObj) return false;
-    for (const yr of ['25', '26']) {
-      if (netObj[yr]) {
-        for (const comp of ['welfare', 'hyundai', 'hivitamin']) {
-          if (netObj[yr][comp]) {
-            for (let m = 1; m <= 12; m++) {
-              if (netObj[yr][comp][m]) return true;
-            }
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-  function normalizeNetData(rawNet) {
-    const empty = createEmptyYearData();
-    ['25', '26'].forEach(y => {
-      ['welfare', 'hyundai', 'hivitamin'].forEach(c => {
-        if (rawNet[y] && rawNet[y][c]) {
-          for (let m = 1; m <= 12; m++) {
-            if (rawNet[y][c][m]) {
-              empty[y][c][m] = rawNet[y][c][m];
-            }
-          }
-        }
-      });
-    });
-    return empty;
-  }
-
-  function showNoticeBar(msg) {
-    const bar = document.getElementById('noticeBar');
-    const text = document.getElementById('noticeText');
-    if (bar && text) {
-      text.innerText = msg;
-      bar.style.display = 'flex';
-    }
-  }
-
-  function saveData() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
-  }
-
-  function exportDataBackup() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
-    const downloadAnchor = document.createElement('a');
-    const today = new Date().toISOString().slice(0, 10);
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `복지카드_실적_백업_${today}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  }
-
-  function importDataBackup(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        const parsed = JSON.parse(e.target.result);
-        if (parsed.net) {
-          db.net = parsed.net;
-        } else {
-          db.net = normalizeNetData(parsed);
-        }
-        saveData();
-        renderTableStructure();
-        calculateAndRender();
-        showNoticeBar("백업 파일에서 데이터를 성공적으로 불러왔습니다.");
-      } catch (err) {
-        alert("올바르지 않은 백업 파일 형식입니다.");
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function renderTableStructure() {
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = buildNetTableHTML();
-    fillInputValues();
-  }
-
-  function buildNetTableHTML() {
-    return `
-      <tr class="row-rate">
-        <td class="td-item">
-          <i data-lucide="trending-up" style="width: 16px; height: 16px; color: var(--primary);"></i>
-          전년비 증감률 (%)
-        </td>
-        ${Array.from({length:12}, (_, i) => `<td id="rate-${i+1}">-</td>`).join('')}
-        <td id="rate-total" style="font-weight: 800;">-</td>
-      </tr>
-
-      <tr class="row-summary" onclick="toggleAccordion('group-26')">
-        <td class="td-item">
-          <span class="toggle-icon" id="icon-group-26">▶</span>
-          '26년 합산
-        </td>
-        ${Array.from({length:12}, (_, i) => `<td id="sum-26-${i+1}">0</td>`).join('')}
-        <td id="sum-26-total" style="font-weight: 800;">0</td>
-      </tr>
-      ${buildDetailInputRows('26')}
-
-      <tr class="row-summary-25" onclick="toggleAccordion('group-25')">
-        <td class="td-item">
-          <span class="toggle-icon" id="icon-group-25">▶</span>
-          '25년 합산 (참고)
-        </td>
-        ${Array.from({length:12}, (_, i) => `<td id="sum-25-${i+1}">0</td>`).join('')}
-        <td id="sum-25-total" style="font-weight: 800;">0</td>
-      </tr>
-      ${buildDetailInputRows('25')}
-    `;
-  }
-
-  function buildDetailInputRows(year) {
-    const comps = [
-      { key: 'welfare', label: '웰페어클럽' },
-      { key: 'hyundai', label: '현대이지웰' },
-      { key: 'hivitamin', label: '하이비타민' }
-    ];
-
-    return comps.map(c => `
-      <tr class="row-detail group-${year} hidden">
-        <td class="td-item indent-1">${c.label}</td>
-        ${Array.from({length:12}, (_, i) => `
-          <td>
-            <input type="text" class="data-input" 
-              data-year="${year}" data-comp="${c.key}" data-month="${i+1}" 
-              oninput="handleInput(this)">
-          </td>
-        `).join('')}
-        <td id="total-${year}-${c.key}" style="font-weight: 600;">0</td>
-      </tr>
-    `).join('');
-  }
-
-  function fillInputValues() {
-    const inputs = document.querySelectorAll('input.data-input');
-    inputs.forEach(input => {
-      const year = input.getAttribute('data-year');
-      const comp = input.getAttribute('data-comp');
-      const month = input.getAttribute('data-month');
-
-      const val = db.net?.[year]?.[comp]?.[month];
-      input.value = (val !== undefined && val !== null && val !== '') ? formatNumberWithCommas(val) : '';
-    });
-  }
-
-  function handleInput(input) {
-    const year = input.getAttribute('data-year');
-    const comp = input.getAttribute('data-comp');
-    const month = input.getAttribute('data-month');
-
-    const cleanVal = input.value.replace(/[^0-9]/g, '');
-
-    if (cleanVal) {
-      input.value = parseInt(cleanVal, 10).toLocaleString();
-    } else {
-      input.value = '';
-    }
-
-    if (!db.net) db.net = createEmptyYearData();
-    if (!db.net[year]) db.net[year] = { welfare: {}, hyundai: {}, hivitamin: {} };
-    if (!db.net[year][comp]) db.net[year][comp] = {};
-    
-    db.net[year][comp][month] = cleanVal;
-
-    saveData();
-    calculateAndRender();
-  }
-
-  function getVal(year, comp, month) {
-    const val = db.net?.[year]?.[comp]?.[month];
-    return parseFloat(val) || 0;
-  }
-
-  function calculateAndRender() {
-    lucide.createIcons();
-    calcNetTab();
-    updateChart();
-  }
-
-  function calcNetTab() {
-    let grandTotal25 = 0;
-    let grandTotal26 = 0;
-    const monthlySum25 = Array(12).fill(0);
-    const monthlySum26 = Array(12).fill(0);
-
-    ['25', '26'].forEach(year => {
-      ['welfare', 'hyundai', 'hivitamin'].forEach(comp => {
-        let compTotal = 0;
-        for (let m = 1; m <= 12; m++) {
-          const val = getVal(year, comp, m);
-          compTotal += val;
-          if (year === '25') monthlySum25[m-1] += val;
-          else monthlySum26[m-1] += val;
-        }
-        const cell = document.getElementById(`total-${year}-${comp}`);
-        if (cell) cell.innerText = formatMillion(compTotal);
-      });
-    });
-
-    for (let m = 1; m <= 12; m++) {
-      const s25 = monthlySum25[m-1];
-      const s26 = monthlySum26[m-1];
-      grandTotal25 += s25;
-      grandTotal26 += s26;
-
-      document.getElementById(`sum-25-${m}`).innerText = formatMillion(s25);
-      document.getElementById(`sum-26-${m}`).innerText = formatMillion(s26);
-
-      renderRate(`rate-${m}`, s25, s26);
-    }
-
-    document.getElementById('sum-25-total').innerText = formatMillion(grandTotal25);
-    document.getElementById('sum-26-total').innerText = formatMillion(grandTotal26);
-    renderRate('rate-total', grandTotal25, grandTotal26);
-  }
-
-  function renderRate(elementId, s25, s26) {
-    const rateTd = document.getElementById(elementId);
-    if (!rateTd) return;
-
-    if (s25 > 0) {
-      const rate = ((s26 - s25) / s25) * 100;
-      const formattedRate = (rate > 0 ? '+' : '') + rate.toFixed(1) + '%';
-      rateTd.innerText = formattedRate;
-      rateTd.className = rate >= 0 ? 'text-up' : 'text-down';
-    } else if (s26 > 0) {
-      rateTd.innerText = '+100.0%';
-      rateTd.className = 'text-up';
-    } else {
-      rateTd.innerText = '-';
-      rateTd.className = '';
-    }
-  }
-
-  function getSeriesData(year, compFilter) {
-    const series = [];
-    for (let m = 1; m <= 12; m++) {
-      if (compFilter === 'all') {
-        series.push(getVal(year, 'welfare', m) + getVal(year, 'hyundai', m) + getVal(year, 'hivitamin', m));
-      } else {
-        series.push(getVal(year, compFilter, m));
-      }
-    }
-    return series;
-  }
-
-  function initChart() {
-    const ctx = document.getElementById('performanceChart').getContext('2d');
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
-        datasets: [
-          {
-            label: "'25년",
-            data: [],
-            borderColor: '#94a3b8',
-            backgroundColor: '#94a3b8',
-            borderDash: [5, 5],
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.2,
-            datalabels: { align: 'top', anchor: 'start', color: '#64748b' }
-          },
-          {
-            label: "'26년",
-            data: [],
-            borderColor: '#2563eb',
-            backgroundColor: '#2563eb',
-            borderWidth: 3,
-            pointRadius: 5,
-            pointHoverRadius: 7,
-            tension: 0.2,
-            datalabels: { align: 'bottom', anchor: 'bottom', color: '#1d4ed8' }
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        layout: { padding: { top: 25, bottom: 25, right: 15, left: 15 } },
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { usePointStyle: true, font: { size: 12, weight: '600' } }
-          },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            callbacks: {
-              label: function(context) {
-                let label = context.dataset.label || '';
-                if (label) label += ': ';
-                if (context.parsed.y !== null) {
-                  label += Math.round(context.parsed.y / 1000000).toLocaleString();
-                }
-                return label;
-              }
-            }
-          },
-          datalabels: {
-            font: { size: 10, weight: 'bold' },
-            formatter: function(value) {
-              if (!value || value === 0) return '';
-              return Math.round(value / 1000000).toLocaleString();
-            }
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return Math.round(value / 1000000).toLocaleString();
-              }
-            },
-            grid: { color: '#f1f5f9' }
-          },
-          x: { grid: { display: false } }
-        }
-      }
-    });
-  }
-
-  function updateChart() {
-    if (!chart) return;
-    chart.data.datasets[0].data = getSeriesData('25', currentFilter);
-    chart.data.datasets[1].data = getSeriesData('26', currentFilter);
-    chart.update();
-  }
-
-  function setupFilterListeners() {
-    const btns = document.querySelectorAll('#filterBtnGroup .filter-btn');
-    btns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        btns.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        currentFilter = e.target.getAttribute('data-filter');
-        updateChart();
-      });
-    });
-  }
-
-  function toggleAccordion(groupClass) {
-    const rows = document.querySelectorAll('.' + groupClass);
-    const icon = document.getElementById('icon-' + groupClass);
-    let isCurrentlyHidden = false;
-
-    rows.forEach(row => {
-      row.classList.toggle('hidden');
-      if (row.classList.contains('hidden')) isCurrentlyHidden = true;
-    });
-
-    if (icon) {
-      if (isCurrentlyHidden) icon.classList.remove('expanded');
-      else icon.classList.add('expanded');
-    }
-  }
-</script>
-</body>
-</html>
+Chart.register(ChartDataLabels);
+const STORAGE_KEY = 'welfare_dashboard_net_v1';
+const LEGACY_STORAGE_KEYS = [
+'welfare_dashboard_combined_v1',
+'welfare_dashboard_v1',
+'welfare_card_data',
+'welfare_dashboard_data'
+];
+let currentFilter = 'all';
+let chart = null;
+let db = {
+net: createEmptyYearData()
+};
+function createEmptyYearData() {
+return {
+'25': { welfare: {}, hyundai: {}, hivitamin: {} },
+'26': { welfare: {}, hyundai: {}, hivitamin: {} }
+};
+}
+function formatMillion(val) {
+if (!val || val === 0) return '0';
+return Math.round(val / 1000000).toLocaleString();
+}
+function formatNumberWithCommas(numStr) {
+if (numStr === null || numStr === undefined || numStr === '') return '';
+const cleanNum = numStr.toString().replace(/[^0-9]/g, '');
+if (!cleanNum) return '';
+return parseInt(cleanNum, 10).toLocaleString();
+}
+document.addEventListener('DOMContentLoaded', () => {
+lucide.createIcons();
+loadSavedDataWithAutoRecovery();
+initChart();
+renderTableStructure();
+setupFilterListeners();
+calculateAndRender();
+});
+function loadSavedDataWithAutoRecovery() {
+const saved = localStorage.getItem(STORAGE_KEY);
+let loaded = false;
+if (saved) {
+try {
+const parsed = JSON.parse(saved);
+if (parsed.net && hasData(parsed.net)) {
+db.net = parsed.net;
+loaded = true;
+}
+} catch (e) {
+console.error('Current storage parse error:', e);
+}
+}
+if (!loaded) {
+for (const oldKey of LEGACY_STORAGE_KEYS) {
+const oldSaved = localStorage.getItem(oldKey);
+if (oldSaved) {
+try {
+const parsed = JSON.parse(oldSaved);
+const targetNet = parsed.net || parsed;
+if (hasData(targetNet)) {
+db.net = normalizeNetData(targetNet);
+saveData();
+showNoticeBar("이전 저장 데이터가 발견되어 자동으로 복구되었습니다!");
+loaded = true;
+break;
+}
+} catch (e) {
+console.error('Legacy storage parse error:', e);
+}
+}
+}
+}
+}
+function hasData(netObj) {
+if (!netObj) return false;
+for (const yr of ['25', '26']) {
+if (netObj[yr]) {
+for (const comp of ['welfare', 'hyundai', 'hivitamin']) {
+if (netObj[yr][comp]) {
+for (let m = 1; m <= 12; m++) {
+if (netObj[yr][comp][m]) return true;
+}
+}
+}
+}
+}
+return false;
+}
+function normalizeNetData(rawNet) {
+const empty = createEmptyYearData();
+['25', '26'].forEach(y => {
+['welfare', 'hyundai', 'hivitamin'].forEach(c => {
+if (rawNet[y] && rawNet[y][c]) {
+for (let m = 1; m <= 12; m++) {
+if (rawNet[y][c][m]) {
+empty[y][c][m] = rawNet[y][c][m];
+}
+}
+}
+});
+});
+return empty;
+}
+function showNoticeBar(msg) {
+const bar = document.getElementById('noticeBar');
+const text = document.getElementById('noticeText');
+if (bar && text) {
+text.innerText = msg;
+bar.style.display = 'flex';
+}
+}
+function saveData() {
+localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+}
+function exportDataBackup() {
+const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+const downloadAnchor = document.createElement('a');
+const today = new Date().toISOString().slice(0, 10);
+downloadAnchor.setAttribute("href", dataStr);
+downloadAnchor.setAttribute("download", `복지카드_실적_백업_${today}.json`);
+document.body.appendChild(downloadAnchor);
+downloadAnchor.click();
+downloadAnchor.remove();
+}
+function importDataBackup(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = function(e) {
+try {
+const parsed = JSON.parse(e.target.result);
+if (parsed.net) {
+db.net = parsed.net;
+} else {
+db.net = normalizeNetData(parsed);
+}
+saveData();
+renderTableStructure();
+calculateAndRender();
+showNoticeBar("백업 파일에서 데이터를 성공적으로 불러왔습니다.");
+} catch (err) {
+alert("올바르지 않은 백업 파일 형식입니다.");
+}
+};
+reader.readAsText(file);
+}
+function renderTableStructure() {
+const tbody = document.getElementById('tableBody');
+tbody.innerHTML = buildNetTableHTML();
+fillInputValues();
+}
+function buildNetTableHTML() {
+return `
+<tr class="row-rate">
+<td class="td-item">
+<i data-lucide="trending-up" style="width: 16px; height: 16px; color: var(--primary);"></i>
+전년비 증감률 (%)
+</td>
+${Array.from({length:12}, (_, i) => `<td id="rate-${i+1}">-</td>`).join('')}
+<td id="rate-total" style="font-weight: 800;">-</td>
+</tr>
+<tr class="row-summary" onclick="toggleAccordion('group-26')">
+<td class="td-item">
+<span class="toggle-icon" id="icon-group-26">▶</span>
+'26년 합산
+</td>
+${Array.from({length:12}, (_, i) => `<td id="sum-26-${i+1}">0</td>`).join('')}
+<td id="sum-26-total" style="font-weight: 800;">0</td>
+</tr>
+${buildDetailInputRows('26')}
+<tr class="row-summary-25" onclick="toggleAccordion('group-25')">
+<td class="td-item">
+<span class="toggle-icon" id="icon-group-25">▶</span>
+'25년 합산 (참고)
+</td>
+${Array.from({length:12}, (_, i) => `<td id="sum-25-${i+1}">0</td>`).join('')}
+<td id="sum-25-total" style="font-weight: 800;">0</td>
+</tr>
+${buildDetailInputRows('25')}
+`;
+}
+function buildDetailInputRows(year) {
+const comps = [
+{ key: 'welfare', label: '웰페어클럽' },
+{ key: 'hyundai', label: '현대이지웰' },
+{ key: 'hivitamin', label: '하이비타민' }
+];
+return comps.map(c => `
+<tr class="row-detail group-${year} hidden">
+<td class="td-item indent-1">${c.label}</td>
+${Array.from({length:12}, (_, i) => `
+<td>
+<input type="text" class="data-input"
+data-year="${year}" data-comp="${c.key}" data-month="${i+1}"
+oninput="handleInput(this)">
+</td>
+`).join('')}
+<td id="total-${year}-${c.key}" style="font-weight: 600;">0</td>
+</tr>
+`).join('');
+}
+function fillInputValues() {
+const inputs = document.querySelectorAll('input.data-input');
+inputs.forEach(input => {
+const year = input.getAttribute('data-year');
+const comp = input.getAttribute('data-comp');
+const month = input.getAttribute('data-month');
+const val = db.net?.[year]?.[comp]?.[month];
+input.value = (val !== undefined && val !== null && val !== '') ? formatNumberWithCommas(val) : '';
+});
+}
+function handleInput(input) {
+const year = input.getAttribute('data-year');
+const comp = input.getAttribute('data-comp');
+const month = input.getAttribute('data-month');
+const cleanVal = input.value.replace(/[^0-9]/g, '');
+if (cleanVal) {
+input.value = parseInt(cleanVal, 10).toLocaleString();
+} else {
+input.value =
