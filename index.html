@@ -522,4 +522,199 @@ const cleanVal = input.value.replace(/[^0-9]/g, '');
 if (cleanVal) {
 input.value = parseInt(cleanVal, 10).toLocaleString();
 } else {
-input.value =
+input.value = '';
+}
+if (!db.net) db.net = createEmptyYearData();
+if (!db.net[year]) db.net[year] = { welfare: {}, hyundai: {}, hivitamin: {} };
+if (!db.net[year][comp]) db.net[year][comp] = {};
+db.net[year][comp][month] = cleanVal;
+saveData();
+calculateAndRender();
+}
+function getVal(year, comp, month) {
+const val = db.net?.[year]?.[comp]?.[month];
+return parseFloat(val) || 0;
+}
+function calculateAndRender() {
+lucide.createIcons();
+calcNetTab();
+updateChart();
+}
+function calcNetTab() {
+let grandTotal25 = 0;
+let grandTotal26 = 0;
+const monthlySum25 = Array(12).fill(0);
+const monthlySum26 = Array(12).fill(0);
+['25', '26'].forEach(year => {
+['welfare', 'hyundai', 'hivitamin'].forEach(comp => {
+let compTotal = 0;
+for (let m = 1; m <= 12; m++) {
+const val = getVal(year, comp, m);
+compTotal += val;
+if (year === '25') monthlySum25[m-1] += val;
+else monthlySum26[m-1] += val;
+}
+const cell = document.getElementById(`total-${year}-${comp}`);
+if (cell) cell.innerText = formatMillion(compTotal);
+});
+});
+for (let m = 1; m <= 12; m++) {
+const s25 = monthlySum25[m-1];
+const s26 = monthlySum26[m-1];
+grandTotal25 += s25;
+grandTotal26 += s26;
+document.getElementById(`sum-25-${m}`).innerText = formatMillion(s25);
+document.getElementById(`sum-26-${m}`).innerText = formatMillion(s26);
+renderRate(`rate-${m}`, s25, s26);
+}
+document.getElementById('sum-25-total').innerText = formatMillion(grandTotal25);
+document.getElementById('sum-26-total').innerText = formatMillion(grandTotal26);
+renderRate('rate-total', grandTotal25, grandTotal26);
+}
+
+function renderRate(elementId, s25, s26) {
+const rateTd = document.getElementById(elementId);
+if (!rateTd) return;
+if (s25 > 0) {
+const rate = ((s26 - s25) / s25) * 100;
+if (rate > 0) {
+rateTd.innerText = '+' + rate.toFixed(1) + '%';
+rateTd.className = 'text-up'; // 파란색
+} else if (rate < 0) {
+rateTd.innerText = '△' + Math.abs(rate).toFixed(1) + '%';
+rateTd.className = 'text-down'; // 빨간색
+} else {
+rateTd.innerText = '0.0%';
+rateTd.className = '';
+}
+} else if (s26 > 0) {
+rateTd.innerText = '+100.0%';
+rateTd.className = 'text-up'; // 파란색
+} else {
+rateTd.innerText = '-';
+rateTd.className = '';
+}
+}
+
+function getSeriesData(year, compFilter) {
+const series = [];
+for (let m = 1; m <= 12; m++) {
+if (compFilter === 'all') {
+series.push(getVal(year, 'welfare', m) + getVal(year, 'hyundai', m) + getVal(year, 'hivitamin', m));
+} else {
+series.push(getVal(year, compFilter, m));
+}
+}
+return series;
+}
+function initChart() {
+const ctx = document.getElementById('performanceChart').getContext('2d');
+chart = new Chart(ctx, {
+type: 'line',
+data: {
+labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+datasets: [
+{
+label: "'25년",
+data: [],
+borderColor: '#94a3b8',
+backgroundColor: '#94a3b8',
+borderDash: [5, 5],
+borderWidth: 2,
+pointRadius: 4,
+pointHoverRadius: 6,
+tension: 0.2,
+datalabels: { align: 'top', anchor: 'start', color: '#64748b' }
+},
+{
+label: "'26년",
+data: [],
+borderColor: '#2563eb',
+backgroundColor: '#2563eb',
+borderWidth: 3,
+pointRadius: 5,
+pointHoverRadius: 7,
+tension: 0.2,
+datalabels: { align: 'bottom', anchor: 'bottom', color: '#1d4ed8' }
+}
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+layout: { padding: { top: 25, bottom: 25, right: 15, left: 15 } },
+plugins: {
+legend: {
+position: 'top',
+labels: { usePointStyle: true, font: { size: 12, weight: '600' } }
+},
+tooltip: {
+mode: 'index',
+intersect: false,
+callbacks: {
+label: function(context) {
+let label = context.dataset.label || '';
+if (label) label += ': ';
+if (context.parsed.y !== null) {
+label += Math.round(context.parsed.y / 1000000).toLocaleString();
+}
+return label;
+}
+}
+},
+datalabels: {
+font: { size: 10, weight: 'bold' },
+formatter: function(value) {
+if (!value || value === 0) return '';
+return Math.round(value / 1000000).toLocaleString();
+}
+}
+},
+scales: {
+y: {
+beginAtZero: true,
+ticks: {
+callback: function(value) {
+return Math.round(value / 1000000).toLocaleString();
+}
+},
+grid: { color: '#f1f5f9' }
+},
+x: { grid: { display: false } }
+}
+}
+});
+}
+function updateChart() {
+if (!chart) return;
+chart.data.datasets[0].data = getSeriesData('25', currentFilter);
+chart.data.datasets[1].data = getSeriesData('26', currentFilter);
+chart.update();
+}
+function setupFilterListeners() {
+const btns = document.querySelectorAll('#filterBtnGroup .filter-btn');
+btns.forEach(btn => {
+btn.addEventListener('click', (e) => {
+btns.forEach(b => b.classList.remove('active'));
+e.target.classList.add('active');
+currentFilter = e.target.getAttribute('data-filter');
+updateChart();
+});
+});
+}
+function toggleAccordion(groupClass) {
+const rows = document.querySelectorAll('.' + groupClass);
+const icon = document.getElementById('icon-' + groupClass);
+let isCurrentlyHidden = false;
+rows.forEach(row => {
+row.classList.toggle('hidden');
+if (row.classList.contains('hidden')) isCurrentlyHidden = true;
+});
+if (icon) {
+if (isCurrentlyHidden) icon.classList.remove('expanded');
+else icon.classList.add('expanded');
+}
+}
+</script>
+</body>
+</html>
