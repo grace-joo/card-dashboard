@@ -238,19 +238,19 @@ align-items: center;
 gap: 8px;
 }
 
-/* 추가된 요약 텍스트 영역 스타일 */
+/* 요약 텍스트 영역 스타일 (상단 위치와 완벽 좌측 정렬) */
 .summary-text-box {
 margin-top: 16px;
-padding: 16px;
-background-color: #f8fafc;
-border: 1px solid var(--border-color);
-border-radius: 8px;
+padding: 16px 0 0 0;
+background-color: transparent;
+border: none;
 font-size: 0.9rem;
 line-height: 1.6;
 color: var(--text-main);
 }
 .summary-text-box p {
 margin-bottom: 4px;
+padding-left: 0;
 }
 .summary-text-box p:last-child {
 margin-bottom: 0;
@@ -268,7 +268,6 @@ margin-bottom: 0;
 <div class="card header-card">
 <div class="title-area">
 <h1>
-<i data-lucide="credit-card" style="color: var(--primary);"></i>
 복지카드 실적
 </h1>
 <p>3개사(웰페어클럽, 현대이지웰, 하이비타민) 실적 추이</p>
@@ -287,7 +286,6 @@ margin-bottom: 0;
 <div class="card">
 <div class="chart-header">
 <div class="chart-title">
-<i data-lucide="line-chart" style="color: var(--primary);"></i>
 <span>순주문금액(단위: 백만 원)</span>
 </div>
 <div class="btn-group" id="filterBtnGroup">
@@ -319,7 +317,7 @@ margin-bottom: 0;
 </tbody>
 </table>
 </div>
-<!-- '25년 합산 표 하단 요약 텍스트 출력 영역 -->
+<!-- 요약 텍스트 출력 영역 -->
 <div class="summary-text-box" id="summaryTextBox">
 <p id="summaryLine1">ㅇ 순주문금액 -억(전월비 -%)</p>
 <p id="summaryLine2">웰페어클럽 -억(전월비 -%), 현대이지웰 -억(전월비 -%), 하이비타민 -억(전월비 -%)</p>
@@ -481,7 +479,6 @@ function buildNetTableHTML() {
 return `
 <tr class="row-rate">
 <td class="td-item">
-<i data-lucide="trending-up" style="width: 16px; height: 16px; color: var(--primary);"></i>
 전년비 증감률 (%)
 </td>
 ${Array.from({length:12}, (_, i) => `<td id="rate-${i+1}">-</td>`).join('')}
@@ -489,7 +486,6 @@ ${Array.from({length:12}, (_, i) => `<td id="rate-${i+1}">-</td>`).join('')}
 </tr>
 <tr class="row-rate">
 <td class="td-item">
-<i data-lucide="activity" style="width: 16px; height: 16px; color: var(--primary);"></i>
 전월비 증감률 (%)
 </td>
 ${Array.from({length:12}, (_, i) => `<td id="mom-rate-${i+1}">-</td>`).join('')}
