@@ -18,7 +18,7 @@
 --border-color: #e2e8f0;
 --text-main: #0f172a;
 --text-muted: #64748b;
-/* 증가 시 파란색, 감소 시 빨간색으로 변경 */
+/* 증가 시 파란색, 감소 시 빨간색 */
 --up-color: #2563eb;
 --down-color: #dc2626;
 }
@@ -237,6 +237,24 @@ display: none;
 align-items: center;
 gap: 8px;
 }
+
+/* 추가된 요약 텍스트 영역 스타일 */
+.summary-text-box {
+margin-top: 16px;
+padding: 16px;
+background-color: #f8fafc;
+border: 1px solid var(--border-color);
+border-radius: 8px;
+font-size: 0.9rem;
+line-height: 1.6;
+color: var(--text-main);
+}
+.summary-text-box p {
+margin-bottom: 4px;
+}
+.summary-text-box p:last-child {
+margin-bottom: 0;
+}
 </style>
 </head>
 <body>
@@ -300,6 +318,11 @@ gap: 8px;
 <!-- JS 동적 생성 -->
 </tbody>
 </table>
+</div>
+<!-- '25년 합산 표 하단 요약 텍스트 출력 영역 -->
+<div class="summary-text-box" id="summaryTextBox">
+<p id="summaryLine1">ㅇ 순주문금액 -억(전월비 -%)</p>
+<p id="summaryLine2">웰페어클럽 -억(전월비 -%), 현대이지웰 -억(전월비 -%), 하이비타민 -억(전월비 -%)</p>
 </div>
 </div>
 </div>
@@ -464,6 +487,14 @@ return `
 ${Array.from({length:12}, (_, i) => `<td id="rate-${i+1}">-</td>`).join('')}
 <td id="rate-total" style="font-weight: 800;">-</td>
 </tr>
+<tr class="row-rate">
+<td class="td-item">
+<i data-lucide="activity" style="width: 16px; height: 16px; color: var(--primary);"></i>
+전월비 증감률 (%)
+</td>
+${Array.from({length:12}, (_, i) => `<td id="mom-rate-${i+1}">-</td>`).join('')}
+<td id="mom-rate-total" style="font-weight: 800;">-</td>
+</tr>
 <tr class="row-summary" onclick="toggleAccordion('group-26')">
 <td class="td-item">
 <span class="toggle-icon" id="icon-group-26">▶</span>
@@ -539,6 +570,7 @@ function calculateAndRender() {
 lucide.createIcons();
 calcNetTab();
 updateChart();
+updateSummaryText();
 }
 function calcNetTab() {
 let grandTotal25 = 0;
@@ -558,6 +590,7 @@ const cell = document.getElementById(`total-${year}-${comp}`);
 if (cell) cell.innerText = formatMillion(compTotal);
 });
 });
+
 for (let m = 1; m <= 12; m++) {
 const s25 = monthlySum25[m-1];
 const s26 = monthlySum26[m-1];
@@ -565,18 +598,93 @@ grandTotal25 += s25;
 grandTotal26 += s26;
 document.getElementById(`sum-25-${m}`).innerText = formatMillion(s25);
 document.getElementById(`sum-26-${m}`).innerText = formatMillion(s26);
+// 전년비 계산
 renderRate(`rate-${m}`, s25, s26);
+
+// 전월비 계산 ('26년 기준)
+if (m === 1) {
+renderRate(`mom-rate-${m}`, 0, 0); // 1월은 전월 데이터 없음
+} else {
+const prevMonthS26 = monthlySum26[m-2];
+renderRate(`mom-rate-${m}`, prevMonthS26, s26);
+}
 }
 document.getElementById('sum-25-total').innerText = formatMillion(grandTotal25);
 document.getElementById('sum-26-total').innerText = formatMillion(grandTotal26);
 renderRate('rate-total', grandTotal25, grandTotal26);
+renderRate('mom-rate-total', 0, 0); // 누계 열의 전월비는 미표시(-)
 }
 
-function renderRate(elementId, s25, s26) {
+/* 수동 입력된 가장 마지막 달을 자동으로 감지하여 하단 요약 텍스트를 업데이트하는 함수 */
+function updateSummaryText() {
+let lastMonth = 0;
+for (let m = 12; m >= 1; m--) {
+const w = getVal('26', 'welfare', m);
+const h = getVal('26', 'hyundai', m);
+const hv = getVal('26', 'hivitamin', m);
+if (w > 0 || h > 0 || hv > 0) {
+lastMonth = m;
+break;
+}
+}
+
+const line1 = document.getElementById('summaryLine1');
+const line2 = document.getElementById('summaryLine2');
+
+if (lastMonth === 0) {
+line1.innerText = "ㅇ 순주문금액 -억(전월비 -%)";
+line2.innerText = "웰페어클럽 -억(전월비 -%), 현대이지웰 -억(전월비 -%), 하이비타민 -억(전월비 -%)";
+return;
+}
+
+const curW = getVal('26', 'welfare', lastMonth);
+const curH = getVal('26', 'hyundai', lastMonth);
+const curHv = getVal('26', 'hivitamin', lastMonth);
+const curTotal = curW + curH + curHv;
+
+let prevW = 0, prevH = 0, prevHv = 0, prevTotal = 0;
+if (lastMonth > 1) {
+prevW = getVal('26', 'welfare', lastMonth - 1);
+prevH = getVal('26', 'hyundai', lastMonth - 1);
+prevHv = getVal('26', 'hivitamin', lastMonth - 1);
+prevTotal = prevW + prevH + prevHv;
+}
+
+function calcMomStr(curr, prev) {
+if (lastMonth === 1 || prev === 0) {
+return curr > 0 ? "+100.0%" : "-";
+}
+const rate = ((curr - prev) / prev) * 100;
+if (rate > 0) return `+${rate.toFixed(1)}%`;
+if (rate < 0) return `△${Math.abs(rate).toFixed(1)}%`;
+return "0.0%";
+}
+
+function formatEok(val) {
+return (val / 100000000).toFixed(2).replace(/\.?0+$/, '') + "억";
+}
+
+const totalEok = formatEok(curTotal);
+const totalMom = calcMomStr(curTotal, prevTotal);
+
+const wEok = formatEok(curW);
+const wMom = calcMomStr(curW, prevW);
+
+const hEok = formatEok(curH);
+const hMom = calcMomStr(curH, prevH);
+
+const hvEok = formatEok(curHv);
+const hvMom = calcMomStr(curHv, prevHv);
+
+line1.innerText = `ㅇ 순주문금액 ${totalEok}(전월비 ${totalMom})`;
+line2.innerText = `웰페어클럽 ${wEok}(전월비 ${wMom}), 현대이지웰 ${hEok}(전월비 ${hMom}), 하이비타민 ${hvEok}(전월비 ${hvMom})`;
+}
+
+function renderRate(elementId, baseVal, newVal) {
 const rateTd = document.getElementById(elementId);
 if (!rateTd) return;
-if (s25 > 0) {
-const rate = ((s26 - s25) / s25) * 100;
+if (baseVal > 0) {
+const rate = ((newVal - baseVal) / baseVal) * 100;
 if (rate > 0) {
 rateTd.innerText = '+' + rate.toFixed(1) + '%';
 rateTd.className = 'text-up'; // 파란색
@@ -587,7 +695,7 @@ rateTd.className = 'text-down'; // 빨간색
 rateTd.innerText = '0.0%';
 rateTd.className = '';
 }
-} else if (s26 > 0) {
+} else if (newVal > 0) {
 rateTd.innerText = '+100.0%';
 rateTd.className = 'text-up'; // 파란색
 } else {
